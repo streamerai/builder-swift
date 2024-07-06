@@ -168,9 +168,9 @@ class CSSStyleUtil {
     }
     
     static func getTextWithoutHtml(_ text: String) -> String {
-        if let regex = try? NSRegularExpression(pattern: "<.*?>") { // TODO: handle decimals
-            let newString = regex.stringByReplacingMatches(in: text, options: .withTransparentBounds, range: NSMakeRange(0, text.count ), withTemplate: "")
-            
+        if let regex = try? NSRegularExpression(pattern: "<.*?>"), let brRegex = try? NSRegularExpression(pattern: "<br>") { // TODO: handle decimals
+            let newLine = brRegex.stringByReplacingMatches(in: text, options: .withTransparentBounds, range: NSMakeRange(0, text.count ), withTemplate: "\n\n")
+            let newString = regex.stringByReplacingMatches(in: newLine, options: .withTransparentBounds, range: NSMakeRange(0, newLine.count ), withTemplate: "")
             return newString
         }
         

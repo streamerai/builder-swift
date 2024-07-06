@@ -9,7 +9,15 @@ public struct Content {
         let isAppetize = UserDefaults.standard.bool(forKey: "isAppetize");
         return isAppetize;
     }
-    public static func getContent(model: String, apiKey: String, url: String, locale: String? = nil, preview: String? = nil, callback: @escaping ((BuilderContent?)->())) {
+    public static func getContent(
+        model: String,
+        apiKey: String,
+        url: String,
+        locale: String? = nil,
+        preview: String? = nil,
+        filter: String? = nil,
+        callback: @escaping ((BuilderContent?)->())
+    ) {
         let encodedUrl = String(describing: url.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!)
         var str = "https://cdn.builder.io/api/v3/content/\(model)"
         
@@ -29,7 +37,11 @@ public struct Content {
         if let locale = useLocale, !locale.isEmpty {
             str += "&locale=\(locale)"
         }
-        
+
+        if let filter {
+            str += "&" + filter
+        }
+
         if let localPreview = usePreview, !localPreview.isEmpty {
             str += "&preview=true"
             str += "&cachebust=true"
@@ -46,15 +58,15 @@ public struct Content {
                 return
             }
             let decoder = JSONDecoder()
-            let jsonString = String(data: data, encoding: .utf8)!
+//            let jsonString = String(data: data, encoding: .utf8)!
             do {
                 if let localPreview = usePreview, !localPreview.isEmpty {
                     print("Fetched FROM LOCAL PREVIEW = \(url)")
                     
-                    let content = try decoder.decode(BuilderContent.self, from: Data(jsonString.utf8))
+                    let content = try decoder.decode(BuilderContent.self, from: data) //Data(jsonString.utf8))
                     callback(content)
                 } else {
-                    let content = try decoder.decode(BuilderContentList.self, from: Data(jsonString.utf8))
+                    let content = try decoder.decode(BuilderContentList.self, from: data) // Data(jsonString.utf8))
                     if content.results.count>0 {
                         callback(content.results[0])
                     }
@@ -67,4 +79,68 @@ public struct Content {
         
         task.resume()
     }
+
+//    public static func getContent<T: Codable>(
+//        model: String,
+//        apiKey: String,
+//        url: String,
+//        locale: String? = nil,
+//        preview: String? = nil
+//    ) async throws -> T {
+//        let encodedUrl = String(describing: url.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!)
+//        var str = "https://cdn.builder.io/api/v3/content/\(model)"
+//
+//        let overrideLocale = UserDefaults.standard.string(forKey: "builderLocale");
+//        let overridePreviewContent = UserDefaults.standard.string(forKey: "builderContentId");
+//        print("override preview content", overridePreviewContent ?? "no override");
+//
+//        let useLocale = overrideLocale ?? locale
+//        let usePreview = overridePreviewContent ?? preview
+//
+//        if let localPreview = usePreview, !localPreview.isEmpty {
+//            str += "/\(localPreview)"
+//            print("LOCAL PREVIEW YES!");
+//        }
+//        str += "?apiKey=\(apiKey)&url=\(encodedUrl)"
+//
+//        if let locale = useLocale, !locale.isEmpty {
+//            str += "&locale=\(locale)"
+//        }
+//
+//        if let localPreview = usePreview, !localPreview.isEmpty {
+//            str += "&preview=true"
+//            str += "&cachebust=true"
+//            str += "&cachebuster=\(Float.random(in: 1..<10))"
+//        }
+//
+//        let url = URL(string: str)!
+//
+//        let session = !(usePreview ?? "").isEmpty ? URLSession(configuration: .ephemeral) : URLSession.shared
+//        print("Fetching URL = \(url)")
+//
+//        let (data, _) = try await session.data(from: url)
+//        let decoder = JSONDecoder()
+//
+//        throw NSError(domain: "f", code: 1)
+////        try decoder.decode(T, from: data)
+//
+////        let jsonString = String(data: data, encoding: .utf8)!
+////        do {
+////            if let localPreview = usePreview, !localPreview.isEmpty {
+////                print("Fetched FROM LOCAL PREVIEW = \(url)")
+////
+////                let content = try decoder.decode(BuilderContent.self, from: Data(jsonString.utf8))
+////                callback(content)
+////            } else {
+////                let content = try decoder.decode(BuilderContentList.self, from: Data(jsonString.utf8))
+////                if content.results.count>0 {
+////                    callback(content.results[0])
+////                }
+////            }
+////        } catch {
+////            print(error)
+////            callback(nil)
+////        }
+//    }
+
 }

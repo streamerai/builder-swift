@@ -5,7 +5,8 @@ private typealias CSS = CSSStyleUtil
 @available(iOS 15.0, macOS 10.15, *)
 struct RenderBlock: View {
     var block: BuilderBlock
-    
+    var interaction: InteractionEventHandler? = nil
+
     func getIdealWidth(finalStyles: [String: String], maxWidth: CGFloat) -> CGFloat {
         let idealWidth = finalStyles["alignSelf"] == "stretch" || finalStyles["alignSelf"] == "center" ? .infinity : (finalStyles["width"] != nil ? CSS.getFloatValue(cssString: finalStyles["width"]) : .infinity);
         return finalStyles["alignSelf"] != nil ? .infinity: (maxWidth != .infinity && idealWidth == .infinity ? maxWidth : idealWidth);
@@ -92,15 +93,16 @@ struct RenderBlock: View {
                     if name != nil {
                         let factoryValue = componentDict[name!]
                         
+                        let _ = print("factory: \(name!), interaction: \(interaction == nil)")
                         if factoryValue != nil && block.component?.options! != nil {
-                            AnyView(_fromValue: factoryValue!(block.component!.options!, finalStyles, block.children))
+                            AnyView(_fromValue: factoryValue!(block.component!.options!, finalStyles, block.children, interaction))
                         }
                     }
                     
                     if name == nil || !(componentDict[name!] != nil && block.component?.options! != nil) {
     //                    let _ = print("No Name for component or no factory", name ?? "NO NAME")
                         if block.children != nil {
-                            RenderBlocks(blocks: block.children!)
+                            RenderBlocks(blocks: block.children!, interaction: interaction!)
                         }
                     }
                 }

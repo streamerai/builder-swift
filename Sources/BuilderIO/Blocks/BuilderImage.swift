@@ -8,7 +8,6 @@ struct BuilderImage: View {
     var aspectRatio: CGFloat;
     var responsiveStyles: [String: String]?;
     var children: [BuilderBlock]?;
-
     
     var body: some View {
         let _ = UIScreen.main.scale;

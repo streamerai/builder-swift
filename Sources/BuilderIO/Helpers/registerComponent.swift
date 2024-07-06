@@ -2,15 +2,23 @@ import SwiftyJSON
 import SwiftUI
 import Foundation
 
-public typealias BuilderBlockFactory = (JSON, [String: String]?, [BuilderBlock]?) -> Any;
+public typealias BuilderBlockFactory = (JSON, [String: String]?, [BuilderBlock]?, InteractionEventHandler?) -> Any;
 public var componentDict: [String:BuilderBlockFactory] = [:]
 
-
-public func registerComponent(component: BuilderCustomComponent, factory: @escaping BuilderBlockFactory, apiKey: String?) {
+public func registerComponent(
+    component: BuilderCustomComponent,
+    factory: @escaping BuilderBlockFactory,
+    apiKey: String?
+) {
     let name = component.name
-    func useFactory(options: JSON, styles: [String: String]?, children:  [BuilderBlock]?) -> Any {
+    func useFactory(
+        options: JSON,
+        styles: [String: String]?,
+        children:  [BuilderBlock]?,
+        interaction: InteractionEventHandler?
+    ) -> Any {
         do {
-            let value = try factory(options, styles, children)
+            let value = try factory(options, styles, children, interaction)
             return value
         } catch {
             print("Could not instantiate \(name): \(error)")
@@ -32,7 +40,12 @@ public func registerComponent(component: BuilderCustomComponent, factory: @escap
 
 }
 
-func registerOnEditingSession(component: BuilderCustomComponent, apiKey: String, sessionId: String, sessionToken: String) {
+func registerOnEditingSession(
+    component: BuilderCustomComponent,
+    apiKey: String,
+    sessionId: String,
+    sessionToken: String
+) {
     DispatchQueue.global().async {
         let overrideUrl = UserDefaults.standard.string(forKey: "builderRemoteUrl")
         let url = overrideUrl ?? "https://cdn.builder.io/api/v1/remote-sessions/\(sessionId)"

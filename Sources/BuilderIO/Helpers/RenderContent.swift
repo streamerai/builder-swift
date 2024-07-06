@@ -1,29 +1,53 @@
 import SwiftUI
 
+public struct InteractionEventParams {
+    public enum InteractionType {
+        case tapUp
+    }
+
+    public var identifier: String
+    public var type: InteractionType
+
+    public init(identifier: String, type: InteractionType) {
+        self.identifier = identifier
+        self.type = type
+    }
+}
+
+public typealias InteractionEventHandler = (InteractionEventParams) -> ()
+
 @available(iOS 15.0, macOS 10.15, *)
 public struct RenderContent: View {
     static var registered = false;
     var content: BuilderContent;
     var apiKey: String;
 
-    public init(content: BuilderContent, apiKey: String, clickActionHandler: ((String, String?) -> Void)? = nil) {
+    var interaction: InteractionEventHandler?
+
+    public init(
+        content: BuilderContent,
+        apiKey: String,
+        clickActionHandler: ((String, String?) -> Void)? = nil,
+        interaction: @escaping InteractionEventHandler
+    ) {
         self.content = content
         self.apiKey = apiKey
-        
+        self.interaction = interaction
+
         if (!RenderContent.registered) {
             // TODO: move these out of here?
             registerComponent(component: BuilderCustomComponent(name: "Text", inputs: [
                 BuilderInput(name: "text", type: "text")
-            ]), factory: { (options, styles, _) in
+            ]), factory: { (options, styles, _, _) in
                 return BuilderText(text: options["text"].stringValue, responsiveStyles: styles)
             }, apiKey: nil)
-            registerComponent(component: BuilderCustomComponent(name: "Image"), factory: { (options, styles, children) in
+            registerComponent(component: BuilderCustomComponent(name: "Image"), factory: { (options, styles, children, _) in
                 return BuilderImage(image: options["image"].stringValue, backgroundSize: options["backgroundSize"].stringValue, aspectRatio: CSSStyleUtil.getFloatValue(cssString: options["aspectRatio"].stringValue),  responsiveStyles: styles, children: children)
             }, apiKey: nil)
-            registerComponent(component: BuilderCustomComponent(name: "Core:Button"), factory: { (options, styles, _) in
+            registerComponent(component: BuilderCustomComponent(name: "Core:Button"), factory: { (options, styles, _, _) in
                 return BuilderButton(text: options["text"].stringValue, urlStr: options["link"].stringValue, openInNewTab: options["openLinkInNewTab"].boolValue, responsiveStyles: styles, buttonAction: clickActionHandler)
             }, apiKey: nil)
-            registerComponent(component: BuilderCustomComponent(name: "Columns"), factory: { (options, styles, _) in
+            registerComponent(component: BuilderCustomComponent(name: "Columns"), factory: { (options, styles, _, _) in
                 let decoder = JSONDecoder()
                 let jsonString = options["columns"].rawString()!
                 let columns = try! decoder.decode([BuilderColumn].self, from: Data(jsonString.utf8))
@@ -37,7 +61,7 @@ public struct RenderContent: View {
     
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            RenderBlocks(blocks: content.data.blocks)
+            RenderBlocks(blocks: content.data.blocks, interaction: interaction!)
                 .onAppear{
                     if (!Content.isPreviewing()) {
                         sendTrackingPixel()
